@@ -18,7 +18,7 @@ function updateOrderStatus($orderId, $newOrderStatus, $comments)
 }
 
 $debug_email = '';
-function sendDebugEmail($message = '', $http_error = false)
+function sendDebugEmail($message = '', $http_error = true)
 {
     global $debug_email;
     if (!empty($debug_email)) {
@@ -60,7 +60,7 @@ while (!$query->EOF) {
 }
 
 if (empty($sharedSecret)) {
-    die('[ERROR] Shared secret secret not set in admin panel.');
+    sendDebugEmail('Shared secret not set in admin panel.');
 }
 
 $headers = array_change_key_case(getallheaders());
@@ -76,19 +76,19 @@ try {
 $charge = $event->data;
 
 if ($charge->getMetadataParam(METADATA_SOURCE_PARAM) != METADATA_SOURCE_VALUE) {
-    sendDebugEmail('Not whmcs charge');
+    sendDebugEmail('Not zencart charge.');
 }
 
-if (($orderId = $charge->getMetadataParam('invoiceid')) === null
-    || ($customerId = $charge->getMetadataParam('clientid')) === null) {
-    sendDebugEmail('Invoice id is not found in charge');
+if (($orderId = $charge->getMetadataParam(METADATA_INVOICE_PARAM)) === null
+    || ($customerId = $charge->getMetadataParam(METADATA_CLIENT_PARAM)) === null) {
+    sendDebugEmail('Invoice id is not found in charge.');
 }
 
 $query = "SELECT * FROM " . TABLE_ORDERS . " WHERE `orders_id`='" . zen_db_input($orderId) . "' AND `customers_id`='" . zen_db_input($customerId) . "'  ORDER BY `orders_id` DESC";
 $query = $db->Execute($query);
 
-if ($query->RecordCount() < 1) {
-    sendDebugEmail('Order is not exists');
+if ($query->RecordCount() === 0) {
+    sendDebugEmail('Order is not exists.');
 }
 
 $total = $query->fields['order_total'];

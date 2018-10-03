@@ -119,7 +119,7 @@ class coinbase extends base
      */
     public function after_order_create($insert_id)
     {
-        global $db, $order, $messageStack, $zco_notifier;
+        global $db, $order, $messageStack;
 
         $sql_data_array = array(
             array('fieldName' => 'orders_id', 'value' => $insert_id, 'type' => 'integer'),
@@ -137,15 +137,15 @@ class coinbase extends base
         $chargeData = array(
             'local_price' => array(
                 'amount' => $order->info['total'],
-                'currency' => $_SESSION['currency'],
+                'currency' => $order->info['currency'],
             ),
             'pricing_type' => 'fixed_price',
             'name' => STORE_NAME . ' order #' . $insert_id,
             'description' => join($products, ', '),
             'metadata' => [
                 METADATA_SOURCE_PARAM => METADATA_SOURCE_VALUE,
-                'invoiceid' => $insert_id,
-                'clientid' => $_SESSION['customer_id'],
+                METADATA_INVOICE_PARAM => $insert_id,
+                METADATA_CLIENT_PARAM => $_SESSION['customer_id'],
                 'email' => $order->customer['email_address'],
                 'first_name' => replace_accents($order->delivery['firstname'] != '' ? $order->delivery['firstname'] : $order->billing['firstname']),
                 'last_name' => replace_accents($order->delivery['lastname'] != '' ? $order->delivery['lastname'] : $order->billing['lastname']),
@@ -160,11 +160,11 @@ class coinbase extends base
             $messageStack->add_session('checkout_payment',  $exception->getMessage(), 'error');
             zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL', true, false));
         }
-        $this->checkoutUrl = $chargeObj->hosted_url;
+        $checkoutUrl = $chargeObj->hosted_url;
 
-        echo '<form name="coinbase" id="coinbase" action="' . $this->checkoutUrl . '" method="GET">';
+        echo '<form name="coinbase" id="coinbase" action="' . $checkoutUrl . '" method="GET">';
         echo '<center>If you are not automatically redirected please click the button below:<br />';
-        echo '<a  href="' . $this->checkoutUrl . '"><input type="button" value="Go to checkout"></a>';
+        echo '<a  href="' . $checkoutUrl . '"><input type="button" value="Go to checkout"></a>';
         echo '</center></form>';
         echo '<script type="text/javascript">document.coinbase.submit();</script>';
     }
