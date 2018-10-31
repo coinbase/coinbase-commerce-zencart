@@ -14,8 +14,6 @@ class coinbase extends base
 
     function __construct()
     {
-        global $order;
-
         $this->code = 'coinbase';
         $this->title = MODULE_PAYMENT_COINBASE_TEXT_TITLE;
         $this->description = MODULE_PAYMENT_COINBASE_TEXT_DESCRIPTION;
@@ -60,11 +58,6 @@ class coinbase extends base
      */
     function before_process()
     {
-        global  $order;
-
-        $this->transaction_amount = $order->info['total'];
-        $this->transaction_currency = 'USD';
-
         return true;
     }
 
@@ -119,7 +112,7 @@ class coinbase extends base
      */
     public function after_order_create($insert_id)
     {
-        global $db, $order, $messageStack;
+        global $db, $order;
 
         $sql_data_array = array(
             array('fieldName' => 'orders_id', 'value' => $insert_id, 'type' => 'integer'),
@@ -141,7 +134,7 @@ class coinbase extends base
             ),
             'pricing_type' => 'fixed_price',
             'name' => STORE_NAME . ' order #' . $insert_id,
-            'description' => join($products, ', '),
+            'description' => mb_substr(join($products, ', '), 0, 200),
             'metadata' => [
                 METADATA_SOURCE_PARAM => METADATA_SOURCE_VALUE,
                 METADATA_INVOICE_PARAM => $insert_id,
@@ -150,17 +143,19 @@ class coinbase extends base
                 'first_name' => replace_accents($order->delivery['firstname'] != '' ? $order->delivery['firstname'] : $order->billing['firstname']),
                 'last_name' => replace_accents($order->delivery['lastname'] != '' ? $order->delivery['lastname'] : $order->billing['lastname']),
             ],
-            'redirect_url' => zen_href_link(FILENAME_CHECKOUT_SUCCESS, 'checkout_id=' . $insert_id, 'SSL')
+            'redirect_url' => zen_href_link(FILENAME_CHECKOUT_SUCCESS, 'checkout_id=' . $insert_id, 'SSL'),
+            'cancel_url' => zen_href_link(FILENAME_CHECKOUT_PAYMENT)
         );
 
         try {
             \Coinbase\ApiClient::init(MODULE_PAYMENT_COINBASE_API_KEY);
             $chargeObj = \Coinbase\Resources\Charge::create($chargeData);
         } catch (\Exception $exception) {
-            $messageStack->add_session('checkout_payment',  $exception->getMessage(), 'error');
-            zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL', true, false));
+            zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, 'error_message=' . $exception->getMessage(), 'SSL', true, false));
         }
         $checkoutUrl = $chargeObj->hosted_url;
+        $_SESSION['cart']->reset(true);
+
 
         echo '<form name="coinbase" id="coinbase" action="' . $checkoutUrl . '" method="GET">';
         echo '<center>If you are not automatically redirected please click the button below:<br />';
@@ -189,13 +184,14 @@ class coinbase extends base
             return 'failed';
         }
 
-        //zen_href_link('ipn_coinbase.php', '', 'SSL', false, false, true);
-
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Enable Cash On Delivery Module', 'MODULE_PAYMENT_COINBASE_STATUS', 'True', 'Do you want to accept CoinBase Commerce payments?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('API Key', 'MODULE_PAYMENT_COINBASE_API_KEY','', 'Shared Secret Key from coinbase Commerce Webhook subscriptions.', '6', '2', now())");
-        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Shared Secret', 'MODULE_PAYMENT_COINBASE_SHARED_SECRET','', 'Shared Secret Key from coinbase Commerce Webhook subscriptions..', '6', '3', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, date_added) VALUES ('Enable Coinbase Commerce Module', 'MODULE_PAYMENT_COINBASE_STATUS', 'True', 'Do you want to accept CoinBase Commerce payments?', '6', '1', 'zen_cfg_select_option(array(\'True\', \'False\'), ', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('API Key', 'MODULE_PAYMENT_COINBASE_API_KEY','', 'Get API Key from Coinbase Commerce Dashboard <a href=\"https://commerce.coinbase.com/dashboard/settings\" target=\"_blank\">Settings &gt; API keys &gt; Create an API key</a>', '6', '2', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Shared Secret', 'MODULE_PAYMENT_COINBASE_SHARED_SECRET','', 'Get Shared Secret Key from Coinbase Commerce Dashboard <a href=\"https://commerce.coinbase.com/dashboard/settings\" target=\"_blank\">Settings &gt; Show Shared Secrets</a>', '6', '3', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, date_added) VALUES ('Sort order of display.', 'MODULE_PAYMENT_COINBASE_SORT_ORDER', '0', 'Sort order of display. Lowest is displayed first.', '6', '5', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('Set Pending Order Status', 'MODULE_PAYMENT_COINBASE_PENDING_STATUS_ID', '" . DEFAULT_ORDERS_STATUS_ID .  "', 'Set the status of orders made with this payment module that are not yet completed to this value<br />(\'Pending\' recommended)', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('Set Expired Order Status', 'MODULE_PAYMENT_COINBASE_EXPIRED_STATUS_ID', '" . DEFAULT_ORDERS_STATUS_ID .  "', 'Set the status of orders made with this payment module that have expired<br />(\'Expired\' recommended)', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('Set Canceled Order Status', 'MODULE_PAYMENT_COINBASE_CANCELED_STATUS_ID', '" . DEFAULT_ORDERS_STATUS_ID .  "', 'Set the status of orders made with this payment module that have been canceled<br />(\'Canceled\' recommended)', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
+        $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('Set Unresolved Order Status', 'MODULE_PAYMENT_COINBASE_UNRESOLVED_STATUS_ID', '" . DEFAULT_ORDERS_STATUS_ID .  "', 'Set the status of orders made with this payment module that have been unresolved', '6', '6', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
         $db->Execute("INSERT INTO " . TABLE_CONFIGURATION . " (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, set_function, use_function, date_added) values ('Set Complete Order Status', 'MODULE_PAYMENT_COINBASE_PROCESSING_STATUS_ID', '2', 'Set the status of orders made with this payment module that have completed payment to this value<br />(\'Processing\' recommended)', '6', '7', 'zen_cfg_pull_down_order_statuses(', 'zen_get_order_status_name', now())");
     }
 
@@ -222,6 +218,9 @@ class coinbase extends base
             'MODULE_PAYMENT_COINBASE_SHARED_SECRET',
             'MODULE_PAYMENT_COINBASE_PENDING_STATUS_ID',
             'MODULE_PAYMENT_COINBASE_PROCESSING_STATUS_ID',
+            'MODULE_PAYMENT_COINBASE_EXPIRED_STATUS_ID',
+            'MODULE_PAYMENT_COINBASE_CANCELED_STATUS_ID',
+            'MODULE_PAYMENT_COINBASE_UNRESOLVED_STATUS_ID',
             'MODULE_PAYMENT_COINBASE_SORT_ORDER'
         );
     }
