@@ -42,8 +42,7 @@ class Webhook
     public function process()
     {
         $event = $this->getEvent();
-        $charge = $event->data;
-        //$charge = $this->getCharge($event->data['id']);
+        $charge = $this->getCharge($event->data['id']);
 
         if (($orderId = $charge->metadata[METADATA_INVOICE_PARAM]) === null
             || ($userId = $charge->metadata[METADATA_CLIENT_PARAM]) === null) {
@@ -76,7 +75,7 @@ class Webhook
                 return;
             case 'UNRESOLVED':
                 // mark order as paid on overpaid or delayed
-                if ($lastTimeLine['context'] === 'OVERPAID' || $lastTimeLine['context'] === 'DELAYED') {
+                if ($lastTimeLine['context'] === 'OVERPAID') {
                     $this->handlePaid($orderId, $charge);
                 } else {
                     $this->updateOrderStatus(
@@ -171,7 +170,7 @@ class Webhook
         }
 
         if ($charge->metadata[METADATA_SOURCE_PARAM] != METADATA_SOURCE_VALUE) {
-            $this->failProcess( 'Not oscommerce charge');
+            $this->failProcess( 'Not ' . METADATA_SOURCE_VALUE . ' charge');
         }
 
         return $charge;
