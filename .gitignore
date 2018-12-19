@@ -1,0 +1,3 @@
+/src/includes/modules/payment/coinbase/vendor
+/.idea/
+/composer.lock

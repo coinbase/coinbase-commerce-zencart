@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/coinbase/init.php';
+require_once __DIR__ . '/coinbase/vendor/autoload.php';
 require_once __DIR__ . '/coinbase/const.php';
 
 class coinbase extends base
@@ -148,7 +148,7 @@ class coinbase extends base
         );
 
         try {
-            \Coinbase\ApiClient::init(MODULE_PAYMENT_COINBASE_API_KEY);
+            \CoinbaseCommerce\ApiClient::init(MODULE_PAYMENT_COINBASE_API_KEY);
             $chargeObj = \Coinbase\Resources\Charge::create($chargeData);
         } catch (\Exception $exception) {
             zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, 'error_message=' . $exception->getMessage(), 'SSL', true, false));
