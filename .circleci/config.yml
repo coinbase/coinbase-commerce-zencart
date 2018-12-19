@@ -6,7 +6,7 @@ jobs: # a collection of steps
       - master
     working_directory: ~/ci # directory where steps will run
     docker: # run the steps with Docker
-    - image: circleci/php:7-fpm-node # ...with this image as the primary container; this is where all `steps` will run
+    - image: circleci/php:5.6-fpm-node # ...with this image as the primary container; this is where all `steps` will run
     environment:
       ZIP_ARCHIVE: coinbase-commerce-whmcs.zip
     steps: # a collection of executable commands
@@ -15,7 +15,7 @@ jobs: # a collection of steps
     - run: composer install -n --prefer-dist
     - run:
         name: Create zip archive
-        command: zip -r $ZIP_ARCHIVE modules
+        command: zip -r $ZIP_ARCHIVE src
     - run:
         name: Upload archive to github releases
         command: php ./.circleci/scripts/release_uploader.php --file=$(pwd)/$ZIP_ARCHIVE --repo==$REPOSITORY --token=$GITHUB_AUTH_TOKEN

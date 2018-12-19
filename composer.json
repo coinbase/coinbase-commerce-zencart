@@ -7,6 +7,6 @@
         "coinbase/coinbase-commerce": "^1.0.0"
     },
     "config": {
-        "vendor-dir": "modules/gateways/Coinbase/vendor"
+        "vendor-dir": "src/includes/modules/payment/coinbase/vendor"
     }
 }
