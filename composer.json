@@ -1,0 +1,12 @@
+{
+    "name": "coinbase/coinbase-commerce-zencart",
+    "description": "Coinbase Commerce plugin for ZenCart",
+    "type": "composer-plugin",
+    "license": "Apache-2.0",
+    "require": {
+        "coinbase/coinbase-commerce": "^1.0.0"
+    },
+    "config": {
+        "vendor-dir": "src/includes/modules/payment/coinbase"
+    }
+}

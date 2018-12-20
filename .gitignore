@@ -1,0 +1,4 @@
+/src/includes/modules/payment/coinbase/*
+!/src/includes/modules/payment/coinbase/const.php
+/.idea/
+/composer.lock
