@@ -5,8 +5,6 @@ require_once __DIR__ . '/lib/HttpClient.php';
 class AssetUploader
 {
     const GITHUB_API_REPOS = 'https://api.github.com/repos';
-    const USER = 'coinbase';
-    const REPO_NAME = 'coinbase-commerce-zencart';
     private $pluginVersion;
 
     public function __construct($file, $token, $repo)
@@ -18,17 +16,22 @@ class AssetUploader
             throw new Exception("Please set plugin version");
         }
 
+        if (!isset($config['repo'])) {
+            throw new Exception("Please set repository");
+        }
+
         $this->headers = [
             sprintf('Authorization: token %s', $token),
             'User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)'
         ];
+
         if (!file_exists($file)) {
             throw new Exception(sprintf("Not found file for uploading. Provided filepath: %s", $file));
         }
 
         $this->file = $file;
-        $this->client = HttpClient::getInstance();б
-        $this->repo = isset($repo) ? $repo : self::USER . DIRECTORY_SEPARATOR . self::REPO_NAME;
+        $this->client = HttpClient::getInstance();
+        $this->repo = isset($repo) ? $repo : $config['repo'];
     }
 
     public function run()
