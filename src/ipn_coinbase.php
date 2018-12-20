@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/application_top.php';
-require_once __DIR__ . '/includes/modules/payment/coinbase/vendor/autoload.php';
+require_once __DIR__ . '/includes/modules/payment/coinbase/autoload.php';
 require_once __DIR__ . '/includes/modules/payment/coinbase/const.php';
 
 class Webhook

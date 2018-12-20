@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/coinbase/vendor/autoload.php';
+require_once __DIR__ . '/coinbase/autoload.php';
 require_once __DIR__ . '/coinbase/const.php';
 
 class coinbase extends base
