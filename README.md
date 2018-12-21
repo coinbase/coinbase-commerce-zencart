@@ -1,4 +1,4 @@
-# Coinbase Commerce OsCommerce Payment Module
+# Coinbase Commerce Zencart Payment Module
 
 # Installation
 1. Signup for an account at [Coinbase Commerce](https://commerce.coinbase.com/).
