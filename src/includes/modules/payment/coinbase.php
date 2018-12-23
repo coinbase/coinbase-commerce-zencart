@@ -149,7 +149,7 @@ class coinbase extends base
 
         try {
             \CoinbaseCommerce\ApiClient::init(MODULE_PAYMENT_COINBASE_API_KEY);
-            $chargeObj = \Coinbase\Resources\Charge::create($chargeData);
+            $chargeObj = \CoinbaseCommerce\Resources\Charge::create($chargeData);
         } catch (\Exception $exception) {
             zen_redirect(zen_href_link(FILENAME_CHECKOUT_PAYMENT, 'error_message=' . $exception->getMessage(), 'SSL', true, false));
         }
